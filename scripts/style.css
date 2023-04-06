@@ -1,0 +1,29 @@
+.chart-container {
+    height: 30vh;
+    padding: 1rem;
+}
+
+.Select-control {
+    color: white;
+  }
+  
+  .Select-value-label {
+    color: white;
+  }
+  
+  .Select-menu-outer {
+    background-color: #2C3E50;
+  }
+  
+  .Select-option {
+    color: white;
+  }
+  
+  .Select-option.is-focused {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .Select-option.is-selected {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
