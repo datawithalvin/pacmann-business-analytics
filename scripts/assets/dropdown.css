@@ -34,3 +34,15 @@
     border-color: var(--primary); 
     box-shadow: none;
 }
+
+.small-dropdown-wrapper .small-dropdown-child .Select-control {
+    height: 10px;
+    min-height: 10px;
+}
+
+.small-dropdown-wrapper .small-dropdown-child .Select-value,
+.small-dropdown-wrapper .small-dropdown-child .Select-placeholder {
+    line-height: 30px;
+    padding-top: 0;
+    padding-bottom: 0;
+}
