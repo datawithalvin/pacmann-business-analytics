@@ -27,6 +27,11 @@ filepath = "../datasets/preprocessed_data.csv"
 main_df = pd.read_csv(filepath)
 
 
+unique_regions = sorted(main_df["order_region"].unique())
+sorted_regions = ["All Regions"] + unique_regions
+
+region_options = [{"label": region, "value": region} for region in sorted_regions]
+
 sidebar = dbc.Col(
     [
         html.H3("DataCo Regional Performance Dashboard"),
@@ -45,10 +50,8 @@ sidebar = dbc.Col(
         html.P("Select Region:"),
         dcc.Dropdown(
             id="region_filter",
-            options=[
-                {"label": region, "value": region} for region in main_df["order_region"].unique()
-            ],
-            value="Southern Asia",
+            options=region_options,
+            value="All Regions",
             clearable=False,
             searchable=False,
         ),
@@ -58,6 +61,7 @@ sidebar = dbc.Col(
     width={"size": 2, "order": 1, "offset": 0},
     className="h-100",
 )
+
 
 
 content = dbc.Col(
@@ -326,6 +330,9 @@ def update_dashboard(year, region):
 
         # Rename the columns for better readability
         region_otif_data.columns = ['order_region', 'on_time_in_full_orders', 'total_orders', 'otif_rate']
+        all_otif = (region_otif_data['on_time_in_full_orders'].sum() / region_otif_data['total_orders'].sum()) * 100
+        region_otif_data.loc[len(region_otif_data)] = ['All Regions', region_otif_data['on_time_in_full_orders'].sum(),  
+                                                       region_otif_data['total_orders'].sum(), all_otif]        
 
         value = str(round(region_otif_data[region_otif_data["order_region"]==region]["otif_rate"].values[0], 2)) + " %"
 
@@ -334,6 +341,7 @@ def update_dashboard(year, region):
     def calculate_avg_shipping(dataframe, region):
 
         avg_scheduled_shipping_time = dataframe.groupby(['order_region'])['days_for_shipping_real'].mean().reset_index()
+        avg_scheduled_shipping_time.loc[len(avg_scheduled_shipping_time)] = ['All Regions', avg_scheduled_shipping_time['days_for_shipping_real'].mean()]
         avg_scheduled_shipping_time = str(round(avg_scheduled_shipping_time[avg_scheduled_shipping_time["order_region"]==region]["days_for_shipping_real"].values[0], 2)) + " days"
 
         return avg_scheduled_shipping_time
@@ -341,6 +349,7 @@ def update_dashboard(year, region):
     def calculate_total_order(dataframe, region):
 
         total_order = dataframe.groupby(['order_region'])['order_item_quantity'].sum().reset_index()
+        total_order.loc[len(total_order)] = ['All Regions', total_order['order_item_quantity'].sum()]
         order_value = total_order[total_order["order_region"]==region]["order_item_quantity"].values[0]
         formatted_order = "{:,.0f}".format(order_value)
         total_order = formatted_order
@@ -350,6 +359,7 @@ def update_dashboard(year, region):
     def calculate_total_sales(dataframe, region):
 
         total_sales = dataframe.groupby(['order_region'])['sales'].sum().reset_index()
+        total_sales.loc[len(total_sales)] = ['All Regions', total_sales['sales'].sum()]
         sales_value = total_sales[total_sales["order_region"]==region]["sales"].values[0]
         formatted_sales = "${:,.2f}".format(sales_value)
         total_sales = formatted_sales
@@ -359,11 +369,12 @@ def update_dashboard(year, region):
     def calculate_total_profit(dataframe, region):
 
         total_profit = dataframe.groupby(['order_region'])['order_profit_per_order'].sum().reset_index()
+        total_profit.loc[len(total_profit)] = ['All Regions', total_profit['order_profit_per_order'].sum()]
         profit_value = total_profit[total_profit["order_region"]==region]["order_profit_per_order"].values[0]
         formatted_profit = "${:,.2f}".format(profit_value)
-        total_profit = formatted_profit
+        profit = formatted_profit
 
-        return total_profit
+        return profit
 
 
     topbarfig, bottombarfig, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit = create_placeholder_figures(filtered_df, region)
