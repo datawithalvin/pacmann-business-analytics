@@ -23,7 +23,7 @@ choropleth_map_urls = {
 
 
 # load preprocessed data
-filepath = "../datasets/preprocessed_data.csv"
+filepath = "../datasets/preprocessed_data_filtered_status.csv"
 main_df = pd.read_csv(filepath)
 
 
@@ -80,15 +80,17 @@ content = dbc.Col(
         dbc.Row(
             [
                 dbc.Col(html.Iframe(id="choropleth_map", src=choropleth_map_urls[2017], style={"width": "100%", "height": "40vh", "border": "none"}), width={"size": 5, "order": 2, "offset": 0}),
-                dbc.Col(dcc.Graph(id="productbar", figure={}, className="chart-container"), width={"size": 5, "order": 1, "offset": 0}),
+                dbc.Col([dbc.Row(dcc.Graph(id="productbar", figure={}, className="chart-container")),
+                        dbc.Row(dcc.Graph(id="dailysales", figure={}, className="chart-container"))], width={"size": 5, "order": 1, "offset": 0}),
             ],
         ),
 
         dbc.Row(
             [
-                dbc.Col(dcc.Graph(id="topbarfig", figure={}, className="chart-container"), style={"height": "40vh", "border": "none"}, width={"size": 3, "order": 1, "offset": 0}),
-                dbc.Col(dcc.Graph(id="bottombarfig", figure={}, className="chart-container"), width={"size": 4, "order": 2, "offset": 0}),
-                dbc.Col(dcc.Graph(id="fill_rate_line_chart", figure={}, className="chart-container"), width={"size": 3, "order": 3, "offset": 0}),
+                dbc.Col(dcc.Graph(id="regionbar", figure={}, className="chart-container"), width={"size": 3, "order": 2, "offset": 0}),
+                # dbc.Col(dcc.Graph(id="dailysales", figure={}, className="chart-container"), width={"size": 3, "order": 1, "offset": 0}),
+                dbc.Col(dcc.Graph(id="relationship", figure={}, className="chart-container"), width={"size": 4, "order": 3, "offset": 0}),
+
             ],
         ),
     ],
@@ -111,8 +113,9 @@ app.layout = dbc.Container(
 
 @app.callback(
     Output("choropleth_map", "src"),
-    Output("topbarfig", "figure"),
-    Output("bottombarfig", "figure"),
+    Output("regionbar", "figure"),
+    Output("dailysales", "figure"),
+    # Output("bottombarfig", "figure"),
     Output("productbar", "figure"),
     Output("otif_rate", "children"),
     Output("region_name", "children"),
@@ -124,6 +127,7 @@ app.layout = dbc.Container(
     Output("total_sales", "children"),
     Output("profit_tittle", "children"),
     Output("total_profit", "children"),   
+    Output("relationship", "figure"),   
     Input("year_filter", "value"),
     Input("region_filter", "value")
 )
@@ -131,8 +135,9 @@ def update_dashboard(year, region):
     filtered_df = main_df[main_df["order_year"]==year]
 
     def create_placeholder_figures(filtered_df, region):
-        topbarfig = create_bar_region(filtered_df)
-        bottombarfig = create_bar_region2(filtered_df)
+        # bottombarfig = create_bar_region2(filtered_df)
+        regionbar = create_bar_region(filtered_df)
+        dailysales = daily_sales(filtered_df, region)
         productbar = create_bar_region_combined(filtered_df, region)
         otif_rate = calculate_otif(filtered_df, region)
         region_name = "OTIF Rate"
@@ -144,9 +149,10 @@ def update_dashboard(year, region):
         total_sales = calculate_total_sales(filtered_df, region)
         profit_tittle = "Total Profit"
         total_profit = calculate_total_profit(filtered_df, region)
+        relationship = get_shipping_relationship(filtered_df)
 
 
-        return topbarfig, bottombarfig, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle, total_sales, profit_tittle, total_profit
+        return regionbar, dailysales, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle, total_sales, profit_tittle, total_profit, relationship
     
     def create_bar_region(dataframe):
         grouped = dataframe.groupby(["market", "order_region"]).agg(
@@ -180,7 +186,7 @@ def update_dashboard(year, region):
 
         return fig
     
-    def create_bar_region2(dataframe):
+    # def create_bar_region2(dataframe):
         grouped = dataframe.groupby(["market", "order_region"]).agg(
             total_sales = ("sales", "sum")
         ).reset_index()
@@ -212,11 +218,72 @@ def update_dashboard(year, region):
 
         return fig
     
+    # def create_bar_region_market_combined(dataframe):
+
+    #     grouped = dataframe.groupby(["market", "order_region"]).agg(
+    #         total_sales = ("sales", "sum")
+    #     ).reset_index()
+
+    #     grouped["total_sales"] = round(grouped["total_sales"], 2)
+
+    #     # sort by total_sales and split into two groups
+    #     grouped = grouped.sort_values(by="total_sales", ascending=False).reset_index()
+
+    #     # format total_sales as a string with $ and thousand separator
+    #     locale.setlocale(locale.LC_ALL, '')  # set locale to default system locale
+    #     grouped["total_sales_formated"] = grouped["total_sales"].apply(lambda x: locale.currency(x, grouping=True))
+
+    #     top_5 = grouped.head(5)
+    #     bottom_5 = grouped.tail(5)
+
+    #     # assign unique colors to each market
+    #     color_map = {'LATAM': '#3366CC', 'Europe': '#DC3912', 'Pacific Asia': '#FF9900', 'USCA': '#109618', 'Africa': '#990099'}
+
+    #     # map category colors to the top_5 and bottom_5 dataframes
+    #     top_5['color'] = top_5['market'].map(color_map)
+    #     bottom_5['color'] = bottom_5['market'].map(color_map)
+
+    #     # create the subplots
+    #     fig = make_subplots(rows=2, cols=1, vertical_spacing=0.2, subplot_titles=(
+    #         "<b>Top 5 High-Performing Regions by Total Sales</b>", 
+    #         "<b>Bottom 5 Underperforming Regions by Total Sales</b>"))
+
+    #     # add the top 5 subplot
+    #     fig.add_trace(go.Bar(x=top_5['total_sales'], y=top_5['order_region'], orientation='h',
+    #                         text=top_5['total_sales_formated'], name='', marker=dict(color=top_5['color']),
+    #                         textfont=dict(color='white')),
+    #                 row=1, col=1)
+    #     fig.update_yaxes(title='', categoryorder='total ascending', row=1, col=1)
+    #     fig.update_xaxes(title='Total Sales', row=1, col=1, showgrid=False)
+
+    #     # add the bottom 5 subplot
+    #     fig.add_trace(go.Bar(x=bottom_5['total_sales'], y=bottom_5['order_region'], orientation='h',
+    #                         text=bottom_5['total_sales_formated'], name='', marker=dict(color=bottom_5['color']),
+    #                         textfont=dict(color='white')),
+    #                 row=2, col=1)
+    #     fig.update_yaxes(title='', categoryorder='total ascending', row=2, col=1)
+    #     fig.update_xaxes(title='Total Sales', row=2, col=1, showgrid=False)
+
+    #     # update the layout
+    #     fig.update_layout(
+    #         height=400,
+    #         width=500,
+    #         template="plotly_dark",
+    #         showlegend=True,
+    #         margin=dict(l=0, r=0, t=20, b=0),
+    #     )
+    #     fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)','paper_bgcolor': 'rgba(0, 0, 0, 0)',})
+    #     fig.update_annotations(font_size=12)
+
+    #     return fig
+
+    
     def create_bar_region_combined(dataframe, region):
-        dataframe = dataframe[dataframe["order_region"]==region]
-        grouped = dataframe.groupby(["category_name"]).agg(
-            total_sales=("sales", "sum")
-        ).reset_index()
+        if region == "All Regions":
+            grouped = dataframe.groupby(["category_name"]).agg(total_sales=("sales", "sum")).reset_index()
+        else:
+            dataframe = dataframe[dataframe["order_region"]==region]
+            grouped = dataframe.groupby(["category_name"]).agg(total_sales=("sales", "sum")).reset_index()
 
         grouped["total_sales"] = round(grouped["total_sales"], 2)
 
@@ -295,14 +362,16 @@ def update_dashboard(year, region):
 
         # add the top 5 subplot
         fig.add_trace(go.Bar(x=top_5['total_sales'], y=top_5['category_name'], orientation='h',
-                            text=top_5['total_sales_formated'], name='', marker=dict(color=top_5['color'])),
+                            text=top_5['total_sales_formated'], name='', marker=dict(color=top_5['color']),
+                            textfont=dict(color='white')),
                     row=1, col=1)
         fig.update_yaxes(title='', categoryorder='total ascending', row=1, col=1)
         fig.update_xaxes(title='Total Sales', row=1, col=1, showgrid=False)
 
         # add the bottom 5 subplot
         fig.add_trace(go.Bar(x=bottom_5['total_sales'], y=bottom_5['category_name'], orientation='h',
-                            text=bottom_5['total_sales_formated'], name='', marker=dict(color=bottom_5['color'])),
+                            text=bottom_5['total_sales_formated'], name='', marker=dict(color=bottom_5['color']),
+                            textfont=dict(color='white')),
                     row=2, col=1)
         fig.update_yaxes(title='', categoryorder='total ascending', row=2, col=1)
         fig.update_xaxes(title='Total Sales', row=2, col=1, showgrid=False)
@@ -376,11 +445,84 @@ def update_dashboard(year, region):
 
         return profit
 
+    def daily_sales(dataframe, region):
+        dataframe['order_date'] = pd.to_datetime(dataframe['order_date'])
+        dataframe = dataframe.set_index('order_date')
 
-    topbarfig, bottombarfig, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit = create_placeholder_figures(filtered_df, region)
+        if region != "All Regions":
+            dataframe = dataframe[dataframe["order_region"] == region]
+
+        daily_sales = dataframe.resample('D')['sales'].sum().reset_index()
+
+        daily_sales["sales"] = round(daily_sales["sales"], 2)
+        daily_sales["order_date"] = daily_sales["order_date"].dt.strftime("%Y-%m-%d")
+
+        fig = go.Figure()
+
+        fig.add_trace(
+            go.Scatter(
+                x=daily_sales["order_date"],
+                y=daily_sales["sales"],
+                mode="lines",
+                hovertemplate='<b>Date:</b> %{x}<br><b>Sales:</b> $%{y:,.2f}<extra></extra>',
+            )
+        )
+
+        fig.update_layout(
+            title=f"<b>{region} Sales Over Time</b>",
+            xaxis_title="",
+            yaxis_title="Sales",
+            width=450,
+            height=300,
+            template="plotly_dark",
+            title_font_size=13
+        )
+
+        fig.update_layout({'plot_bgcolor': 'rgba(0, 0, 0, 0)','paper_bgcolor': 'rgba(0, 0, 0, 0)',})
+
+        return fig
+
+    def get_shipping_relationship(dataframe):
+            # Calculate the average days for shipping (actual vs. scheduled) and average sales by region
+            avg_days_sales = dataframe.groupby('order_region').agg({'days_for_shipping_real': 'mean',
+                                                            'days_for_shipment_scheduled': 'mean',
+                                                            'sales': 'mean'}).reset_index()
+
+            # Create the scatter plot using Plotly
+            fig = px.scatter(avg_days_sales, x='days_for_shipping_real', y='days_for_shipment_scheduled',
+                            size='sales', color='order_region', hover_name='order_region',
+                            labels={'days_for_shipping_real': 'Average Days for Shipping (Actual)',
+                                    'days_for_shipment_scheduled': 'Average Days for Shipping (Scheduled)',
+                                    'sales': 'Average Sales'})
+
+            # Customize the chart appearance
+            fig.update_layout(title={'text': 'Relationship between Average Days for Shipping (Actual vs. Scheduled)<br>and<br>Average Sales by Region</br>',
+                                    'font': {'size': 13},
+                                    'x': 0.5,
+                                    'xanchor': 'center'},
+                            height=300,
+                            width=500,
+                            template="plotly_dark",
+                            showlegend=True,
+                            margin=dict(l=0, r=0, t=80, b=0),
+                            plot_bgcolor='rgba(0, 0, 0, 0)',
+                            paper_bgcolor='rgba(0, 0, 0, 0)')
+
+            fig.update_xaxes(title_font=dict(size=11))
+            fig.update_yaxes(title_font=dict(size=11))
+
+            fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Average Days for Shipping (Actual): %{x:.2f}<br>Average Days for Shipping (Scheduled): %{y:.2f}<br>Average Sales: $%{marker.size:.2f}')
+
+            fig.update_layout(legend_title_text='Region', legend=dict(font=dict(size=11)))
+
+            # Display the chart
+            return fig
 
 
-    return choropleth_map_urls.get(year), topbarfig, bottombarfig, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit
+    regionbar, dailysales, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit, relationship = create_placeholder_figures(filtered_df, region)
+
+
+    return choropleth_map_urls.get(year), regionbar, dailysales, productbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit, relationship
 
 
 
