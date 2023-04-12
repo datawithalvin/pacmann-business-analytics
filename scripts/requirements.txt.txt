@@ -1,0 +1,6 @@
+altair
+plotly
+dash
+dash_bootstrap_components
+pandas
+gunicorn
