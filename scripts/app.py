@@ -163,7 +163,7 @@ def update_dashboard(year, region):
         total_sales = calculate_total_sales(filtered_df, region)
         profit_tittle = "Total Profit"
         total_profit = calculate_total_profit(filtered_df, region)
-        relationship = get_shipping_relationship(filtered_df)
+        relationship = get_shipping_relationship(filtered_df, region)
         orderbar = create_bar_region_order(filtered_df)
 
 
@@ -265,23 +265,28 @@ def update_dashboard(year, region):
 
         return profit
 
-    def get_shipping_relationship(dataframe):
-            # Calculate the average days for shipping (actual vs. scheduled) and average sales by region
-            avg_days_sales = dataframe.groupby('order_region').agg({'days_for_shipping_real': 'mean',
-                                                            'days_for_shipment_scheduled': 'mean',
-                                                            'sales': 'mean'}).reset_index()
+    def get_shipping_relationship(dataframe, region):
+            if region == "All Regions":
+                    shipping_time = dataframe.groupby(['shipping_mode']).agg({'days_for_shipping_real': 'mean',
+                                                                    'days_for_shipment_scheduled': 'mean',
+                                                                    'late_delivery_risk': 'sum'}).reset_index()
+            else:
+                    dataframe = dataframe[dataframe["order_region"]==region]
+                    shipping_time = dataframe.groupby(['shipping_mode']).agg({'days_for_shipping_real': 'mean',
+                                                                    'days_for_shipment_scheduled': 'mean',
+                                                                    'late_delivery_risk': 'sum'}).reset_index()
 
             # Create the scatter plot using Plotly
-            fig = px.scatter(avg_days_sales, x='days_for_shipping_real', y='days_for_shipment_scheduled',
-                            size='sales', color='order_region', hover_name='order_region',
+            fig = px.scatter(shipping_time, x='days_for_shipping_real', y='days_for_shipment_scheduled',
+                            size='late_delivery_risk', color='shipping_mode', hover_name='shipping_mode',
                             labels={'days_for_shipping_real': 'Average Days for Shipping (Actual)',
                                     'days_for_shipment_scheduled': 'Average Days for Shipping (Scheduled)',
-                                    'sales': 'Average Sales'})
+                                    'late_delivery_risk': 'Total Late Risk'})
 
             # Customize the chart appearance
-            fig.update_layout(title={'text': '<b>Relationship between Average Days for Shipping (Actual vs. Scheduled)<br>and<br>Average Sales by Region</br></b>',
+            fig.update_layout(title={'text': f'<b>Relationship between Shipping Days and Late Delivery Risk<br>{region}</b></b>',
                                     'font': {'size': 12},
-                                    'x': 0.5,
+                                    'x': 0.5, 'y':0.88,
                                     'xanchor': 'center'},
                             height=300,
                             width=500,
@@ -294,11 +299,10 @@ def update_dashboard(year, region):
             fig.update_xaxes(title_font=dict(size=11))
             fig.update_yaxes(title_font=dict(size=11))
 
-            fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Average Days for Shipping (Actual): %{x:.2f}<br>Average Days for Shipping (Scheduled): %{y:.2f}<br>Average Sales: $%{marker.size:.2f}')
+            fig.update_traces(hovertemplate='<b>%{hovertext}</b><br>Average Days for Shipping (Actual): %{x:.2f}<br>Average Days for Shipping (Scheduled): %{y:.2f}<br>Total Late Risk: %{marker.size:.0f}')
 
-            fig.update_layout(legend_title_text='Region', legend=dict(font=dict(size=11)))
+            fig.update_layout(legend_title_text='Shipping Mode', legend=dict(font=dict(size=11)))
 
-            # Display the chart
             return fig
 
     def create_fig_region_combined(dataframe, region):
@@ -314,8 +318,7 @@ def update_dashboard(year, region):
         grouped_bar = grouped_bar.sort_values(by="total_sales", ascending=False).reset_index()
 
         # format total_sales as a string with $ and thousand separator
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # set locale to default system locale
-        grouped_bar["total_sales_formated"] = grouped_bar["total_sales"].apply(lambda x: locale.currency(x, grouping=True))
+        grouped_bar["total_sales_formated"] = grouped_bar["total_sales"].apply(lambda x: f'${x:,.2f}')
 
         top_5 = grouped_bar.head(5)
 
@@ -435,8 +438,7 @@ def update_dashboard(year, region):
         grouped["total_order"] = round(grouped["total_order"], 2)
 
         # Add a new column named total_order_formatted with values from total_order formatted with thousand separators
-        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        grouped["total_order_formated"] = grouped["total_order"].apply(lambda x: locale.currency(x, grouping=True))
+        grouped["total_order_formated"] = grouped["total_order"].apply(lambda x: f'{x:,.0f}')
 
         # Select the top 5 high-performing regions by total order
         grouped = grouped.head(5)
