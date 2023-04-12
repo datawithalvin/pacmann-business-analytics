@@ -450,7 +450,7 @@ def update_dashboard(year, region):
             x="total_order",
             y="order_region",
             orientation="h",
-            text="total_order_formatted",
+            text="total_order_formated",
             color="market",
             labels={"order_region":"", "total_order":"Total Order"},
             template="plotly_dark",
