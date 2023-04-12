@@ -436,7 +436,7 @@ def update_dashboard(year, region):
 
         # Add a new column named total_order_formatted with values from total_order formatted with thousand separators
         locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
-        grouped["total_sales_formated"] = grouped["total_sales"].apply(lambda x: locale.currency(x, grouping=True))
+        grouped["total_order_formated"] = grouped["total_order"].apply(lambda x: locale.currency(x, grouping=True))
 
         # Select the top 5 high-performing regions by total order
         grouped = grouped.head(5)
