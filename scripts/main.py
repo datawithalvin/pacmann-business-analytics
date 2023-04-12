@@ -13,6 +13,7 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY, "./style.css", "./dropdown.css"])
+server = app.server
 
 choropleth_map_urls = {
     2015: "https://datawrapper.dwcdn.net/HDZHt/2/",
