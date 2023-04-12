@@ -314,7 +314,7 @@ def update_dashboard(year, region):
         grouped_bar = grouped_bar.sort_values(by="total_sales", ascending=False).reset_index()
 
         # format total_sales as a string with $ and thousand separator
-        locale.setlocale(locale.LC_ALL, '')  # set locale to default system locale
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')  # set locale to default system locale
         grouped_bar["total_sales_formated"] = grouped_bar["total_sales"].apply(lambda x: locale.currency(x, grouping=True))
 
         top_5 = grouped_bar.head(5)
@@ -435,7 +435,8 @@ def update_dashboard(year, region):
         grouped["total_order"] = round(grouped["total_order"], 2)
 
         # Add a new column named total_order_formatted with values from total_order formatted with thousand separators
-        grouped["total_order_formatted"] = grouped["total_order"].apply(lambda x: locale.format_string("%0.0f", x, grouping=True))
+        locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+        grouped["total_sales_formated"] = grouped["total_sales"].apply(lambda x: locale.currency(x, grouping=True))
 
         # Select the top 5 high-performing regions by total order
         grouped = grouped.head(5)
