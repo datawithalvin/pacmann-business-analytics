@@ -24,7 +24,7 @@ choropleth_map_urls = {
 
 
 # load preprocessed data
-filepath = "../datasets/preprocessed_data_filtered_status.csv"
+filepath = "datasets/preprocessed_data_filtered_status.csv"
 main_df = pd.read_csv(filepath)
 
 
@@ -488,7 +488,6 @@ def update_dashboard(year, region):
 
 
     return choropleth_map_urls.get(year), regionbar, otif_rate, region_name, avg_days, avg_tittle, total_tittle, total_order, sales_tittle,  total_sales, profit_tittle, total_profit, relationship, firtcolumn, orderbar
-
 
 
 if __name__ == "__main__":
