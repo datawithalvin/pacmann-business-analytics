@@ -1,0 +1,22 @@
+market,order_year,order_region,order_item_quantity
+Africa,2016,Eastern Africa,27.141732283464567
+Africa,2016,Middle Africa,25.108527131782946
+Africa,2016,Northern Africa,47.44186046511628
+Africa,2016,Southern Africa,16.75
+Africa,2016,Western Africa,54.3359375
+Europe,2016,Asiatic Russia/European Russia,13.852713178294573
+Europe,2016,Eastern Europe,44.04651162790697
+Europe,2016,Northern Europe,0.6065573770491803
+Europe,2016,Southern Europe,0.8770491803278688
+Europe,2016,Western Europe,0.8306010928961749
+Latin America,2016,Caribbean,0.0
+Latin America,2016,Central America,0.0
+Latin America,2016,South America,0.0
+Pacific Asia,2016,Australia/New Zealand,32.622950819672134
+Pacific Asia,2016,Central Asia,8.118110236220472
+Pacific Asia,2016,Eastern Asia,17.226775956284154
+Pacific Asia,2016,Melanesia,0.1366120218579235
+Pacific Asia,2016,Southeastern Asia,23.6448087431694
+Pacific Asia,2016,Southern Asia,23.68032786885246
+Pacific Asia,2016,Western Asia,84.82170542635659
+USCA,2016,Northern America,195.84363636363636
